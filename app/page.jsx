@@ -36,7 +36,7 @@ export default function Home() {
               
               <div className="flex items-center gap-2">
                 <span className="text-xs text-zinc-400">Status:</span>
-                <span className="text-xs font-semibold text-emerald-400 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                <span className="text-xs font-semibold text-red-400 px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20">
                   Online
                 </span>
               </div>
