@@ -28,7 +28,7 @@ export default function Home() {
                 </span>
                 <div>
                   <h1 className="text-lg md:text-xl font-bold tracking-tight text-zinc-100">
-                    {"REDAFF1K's Broadcast Room"}
+                    {"1_bp's Broadcast Room"}
                   </h1>
                   <p className="text-xs text-zinc-400">Streaming live on Kick.com</p>
                 </div>
@@ -47,7 +47,7 @@ export default function Home() {
 
             {/* Stream Description Info */}
             <div className="p-5 rounded-xl bg-zinc-900/30 border border-zinc-800/80">
-              <h2 className="text-base font-semibold text-zinc-100">About REDAFF1K</h2>
+              <h2 className="text-base font-semibold text-zinc-100">About 1_bp</h2>
               <p className="text-sm text-zinc-400 mt-2 leading-relaxed">
                 Welcome! Dive into top-tier gameplay, live developer sessions, or casual hangout streams. Make sure to check out the chat on the right and drop a follow!
               </p>

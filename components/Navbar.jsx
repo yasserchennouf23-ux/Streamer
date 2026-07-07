@@ -15,7 +15,7 @@ export default function Navbar() {
         </div>
         <nav className="flex items-center gap-4">
           <a
-            href="https://kick.com/REDAFF1K"
+            href="https://kick.com/reda-3x"
             target="_blank"
             rel="noopener noreferrer"
             className="rounded-lg bg-emerald-500/10 px-3.5 py-1.5 text-xs font-semibold text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500 hover:text-zinc-950 transition duration-300"

@@ -5,7 +5,7 @@ export default function KickPlayer() {
     <div className="w-full overflow-hidden rounded-xl bg-zinc-900 border border-zinc-800 shadow-2xl shadow-black/50">
       <div className="aspect-video w-full">
         <iframe
-          src="https://player.kick.com/REDAFF1K"
+          src="https://player.kick.com/reda-3x"
           className="h-full w-full"
           frameBorder="0"
           scrolling="no"
