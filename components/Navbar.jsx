@@ -27,13 +27,13 @@ export default function Navbar() {
           </a>
 
           <a
-            href="#"
+            href="https://www.youtube.com/@reda-3x"
             className="text-xs font-medium text-zinc-400 hover:text-zinc-50 transition duration-200"
           >
             YouTube
           </a>
           <a
-            href="#"
+            href="https://discord.gg/T2Xx6fS8J"
             className="text-xs font-medium text-zinc-400 hover:text-zinc-50 transition duration-200"
           >
             Discord
