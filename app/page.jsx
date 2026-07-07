@@ -51,7 +51,7 @@ export default function Home() {
     async function fetchData() {
       // 1. Fetch channel status (is live?)
       try {
-        const res = await fetch("https://kick.com/api/v2/channels/reda-3x");
+        const res = await fetch("https://kick.com/api/v2/channels/f0nixx");
         if (res.ok) {
           const data = await res.json();
           setIsLive(data.livestream !== null);
@@ -62,7 +62,7 @@ export default function Home() {
 
       // 2. Fetch recent VODs
       try {
-        const res = await fetch("https://kick.com/api/v2/channels/reda-3x/videos");
+        const res = await fetch("https://kick.com/api/v2/channels/f0nixx/videos");
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data)) {
