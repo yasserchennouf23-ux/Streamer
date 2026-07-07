@@ -1,9 +1,9 @@
-/* eslint-disable @next/next/no-img-element */
+"use client";
+
+import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import KickPlayer from "@/components/KickPlayer";
 import KickChat from "@/components/KickChat";
-
-export const dynamic = "force-dynamic";
 
 function formatDuration(ms) {
   if (!ms) return "00:00:00";
@@ -41,45 +41,42 @@ function formatRelativeDate(dateStr) {
   }
 }
 
-export default async function Home() {
-  let isLive = false;
-  let lastStreams = [];
+export default function Home() {
+  const [isLive, setIsLive] = useState(false);
+  const [lastStreams, setLastStreams] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // 1. Fetch channel status (is live?)
-  try {
-    const res = await fetch("https://kick.com/api/v2/channels/reda-3x", {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "application/json",
-      },
-      next: { revalidate: 10 }
-    });
-    if (res.ok) {
-      const data = await res.json();
-      isLive = data.livestream !== null;
-    }
-  } catch (err) {
-    console.error("Error checking stream status:", err);
-  }
+  useEffect(() => {
+    async function fetchData() {
+      // 1. Fetch channel status (is live?)
+      try {
+        const res = await fetch("https://kick.com/api/v2/channels/reda-3x");
+        if (res.ok) {
+          const data = await res.json();
+          setIsLive(data.livestream !== null);
+        }
+      } catch (err) {
+        console.error("Error checking stream status:", err);
+      }
 
-  // 2. Fetch recent VODs
-  try {
-    const res = await fetch("https://kick.com/api/v2/channels/reda-3x/videos", {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "application/json",
-      },
-      next: { revalidate: 10 }
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        lastStreams = data.slice(0, 3); // Get only last 3 streams
+      // 2. Fetch recent VODs
+      try {
+        const res = await fetch("https://kick.com/api/v2/channels/reda-3x/videos");
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            setLastStreams(data.slice(0, 3));
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching VODs:", err);
+      } finally {
+        setLoading(false);
       }
     }
-  } catch (err) {
-    console.error("Error fetching VODs:", err);
-  }
+
+    fetchData();
+  }, []);
 
   return (
     <div className="flex flex-col min-h-screen bg-zinc-950">
@@ -97,7 +94,11 @@ export default async function Home() {
             <div className="flex flex-wrap items-center justify-between gap-3 bg-zinc-900/40 border border-zinc-800/80 rounded-xl p-4">
               <div className="flex items-center gap-3">
                 {/* Blinking Live Badge */}
-                {isLive ? (
+                {loading ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-500 text-xs font-black uppercase tracking-wider animate-pulse">
+                    CHECKING...
+                  </span>
+                ) : isLive ? (
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-500/10 text-red-500 text-xs font-black uppercase tracking-wider border border-red-500/20">
                     <span className="relative flex h-2 w-2">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -120,7 +121,11 @@ export default async function Home() {
               
               <div className="flex items-center gap-2">
                 <span className="text-xs text-zinc-400">Status:</span>
-                {isLive ? (
+                {loading ? (
+                  <span className="text-xs font-semibold text-zinc-500 px-2 py-0.5 rounded-full bg-zinc-900 border border-zinc-850 animate-pulse">
+                    ...
+                  </span>
+                ) : isLive ? (
                   <span className="text-xs font-semibold text-red-400 px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20">
                     Online
                   </span>
@@ -133,7 +138,18 @@ export default async function Home() {
             </div>
 
             {/* Stream Player */}
-            <KickPlayer isLive={isLive} />
+            {loading ? (
+              <div className="w-full overflow-hidden rounded-xl bg-zinc-900 border border-zinc-800 shadow-2xl shadow-black/50">
+                <div className="aspect-video w-full bg-zinc-950 flex items-center justify-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-8 h-8 rounded-full border-2 border-red-500/30 border-t-red-500 animate-spin" />
+                    <span className="text-xs text-zinc-500 uppercase tracking-widest font-bold">Loading player...</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <KickPlayer isLive={isLive} />
+            )}
 
             {/* Stream Description Info */}
             <div className="p-5 rounded-xl bg-zinc-900/30 border border-zinc-800/80">
@@ -152,7 +168,7 @@ export default async function Home() {
         </div>
 
         {/* Last Livestreams Section */}
-        {lastStreams.length > 0 && (
+        {!loading && lastStreams.length > 0 && (
           <section className="mt-12 border-t border-zinc-800/80 pt-10 pb-6">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2.5">
@@ -186,6 +202,7 @@ export default async function Home() {
                     {/* Thumbnail Container */}
                     <div className="relative aspect-video w-full overflow-hidden bg-gradient-to-br from-zinc-900 to-zinc-950 flex items-center justify-center">
                       {vodThumb ? (
+                        // eslint-disable-next-line @next/next/no-img-element
                         <img 
                           src={vodThumb} 
                           alt={vodTitle} 
