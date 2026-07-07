@@ -2,28 +2,85 @@ import Navbar from "@/components/Navbar";
 import KickPlayer from "@/components/KickPlayer";
 import KickChat from "@/components/KickChat";
 
-const lastStreams = [
+function formatDuration(ms) {
+  if (!ms) return "00:00:00";
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const pad = (num) => String(num).padStart(2, '0');
+  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+}
+
+function formatRelativeDate(dateStr) {
+  if (!dateStr) return "";
+  try {
+    const date = new Date(dateStr.replace(' ', 'T') + 'Z');
+    const now = new Date();
+    const diffMs = now - date;
+    const diffDays = Math.floor(diffMs / 86400000);
+    const diffHours = Math.floor(diffMs / 3600000);
+
+    if (diffDays > 0) {
+      if (diffDays === 1) return "Yesterday";
+      if (diffDays < 7) return `${diffDays} days ago`;
+      if (diffDays < 30) {
+        const weeks = Math.floor(diffDays / 7);
+        return weeks === 1 ? "1 week ago" : `${weeks} weeks ago`;
+      }
+      return date.toLocaleDateString();
+    } else if (diffHours > 0) {
+      return diffHours === 1 ? "1 hour ago" : `${diffHours} hours ago`;
+    }
+    return "Just now";
+  } catch (err) {
+    return dateStr;
+  }
+}
+
+const fallbackStreams = [
   {
-    title: "RED-RP | Darija MTA: Lkhdma M3a Lkhout & Ganging Up #45",
+    session_title: "RED-RP | Darija MTA: Lkhdma M3a Lkhout & Ganging Up #45",
     duration: "04:12:45",
     views: "1.8K views",
-    date: "Yesterday",
+    created_at: "Yesterday",
+    thumbnail: null,
+    video: { uuid: null }
   },
   {
-    title: "RED-RP | MTA Morocco: T7ramiyat & Police Chases #44",
+    session_title: "RED-RP | MTA Morocco: T7ramiyat & Police Chases #44",
     duration: "03:52:10",
     views: "2.4K views",
-    date: "3 days ago",
+    created_at: "3 days ago",
+    thumbnail: null,
+    video: { uuid: null }
   },
   {
-    title: "RED-RP | Server Launch Event & Custom Car Reveal #43",
+    session_title: "RED-RP | Server Launch Event & Custom Car Reveal #43",
     duration: "05:15:30",
     views: "3.1K views",
     date: "1 week ago",
-  },
+    created_at: "1 week ago",
+    thumbnail: null,
+    video: { uuid: null }
+  }
 ];
 
-export default function Home() {
+export default async function Home() {
+  let lastStreams = fallbackStreams;
+  try {
+    const res = await fetch("https://kick.com/api/v2/channels/reda-3x/videos", {
+      next: { revalidate: 60 } // cache for 60 seconds
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        lastStreams = data;
+      }
+    }
+  } catch (err) {
+    console.error("Error fetching VODs:", err);
+  }
   return (
     <div className="flex flex-col min-h-screen bg-zinc-950">
       {/* Top Navbar */}
@@ -97,45 +154,70 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {lastStreams.map((vod, idx) => (
-              <div key={idx} className="group cursor-pointer overflow-hidden rounded-xl border border-zinc-800/80 bg-zinc-900/40 transition-all duration-300 hover:-translate-y-1.5 hover:border-red-500/30 hover:shadow-[0_10px_30px_-10px_rgba(239,68,68,0.2)]">
-                {/* Thumbnail Container */}
-                <div className="relative aspect-video w-full overflow-hidden bg-gradient-to-br from-zinc-900 to-zinc-950 flex items-center justify-center">
-                  {/* Grid pattern background */}
-                  <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-30 group-hover:opacity-50 transition-opacity" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent opacity-80" />
-                  
-                  {/* Pulsing Play icon */}
-                  <div className="z-10 flex h-12 w-12 items-center justify-center rounded-full bg-red-600/10 border border-red-500/30 text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.1)] transition-all duration-300 group-hover:scale-110 group-hover:bg-red-600 group-hover:text-zinc-950 group-hover:shadow-[0_0_20px_rgba(239,68,68,0.4)]">
-                    <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
+            {lastStreams.map((vod, idx) => {
+              const vodUrl = vod.video?.uuid ? `https://kick.com/video/${vod.video.uuid}` : `https://kick.com/reda-3x/videos`;
+              const vodTitle = vod.session_title || vod.title;
+              const vodViews = typeof vod.views === 'number' ? `${vod.views.toLocaleString()} views` : (vod.views || "0 views");
+              const vodDuration = typeof vod.duration === 'number' ? formatDuration(vod.duration) : (vod.duration || "00:00:00");
+              const vodDate = vod.created_at ? (vod.created_at.includes('-') ? formatRelativeDate(vod.created_at) : vod.created_at) : (vod.date || "");
+              const vodThumb = vod.thumbnail?.src || vod.thumbnail || null;
+
+              return (
+                <a 
+                  key={idx} 
+                  href={vodUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group cursor-pointer overflow-hidden rounded-xl border border-zinc-800/80 bg-zinc-900/40 transition-all duration-300 hover:-translate-y-1.5 hover:border-red-500/30 hover:shadow-[0_10px_30px_-10px_rgba(239,68,68,0.2)]"
+                >
+                  {/* Thumbnail Container */}
+                  <div className="relative aspect-video w-full overflow-hidden bg-gradient-to-br from-zinc-900 to-zinc-950 flex items-center justify-center">
+                    {vodThumb ? (
+                      <img 
+                        src={vodThumb} 
+                        alt={vodTitle} 
+                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    ) : (
+                      <>
+                        {/* Grid pattern background */}
+                        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-30 group-hover:opacity-50 transition-opacity" />
+                      </>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent opacity-80" />
+                    
+                    {/* Pulsing Play icon */}
+                    <div className="z-10 flex h-12 w-12 items-center justify-center rounded-full bg-red-600/10 border border-red-500/30 text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.1)] transition-all duration-300 group-hover:scale-110 group-hover:bg-red-600 group-hover:text-zinc-950 group-hover:shadow-[0_0_20px_rgba(239,68,68,0.4)]">
+                      <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </div>
+
+                    {/* Duration Badge */}
+                    <span className="absolute bottom-3 right-3 rounded bg-zinc-950/80 px-2 py-0.5 text-[10px] font-bold text-zinc-300 tracking-wider">
+                      {vodDuration}
+                    </span>
+                    
+                    {/* Video Type Badge */}
+                    <span className="absolute top-3 left-3 rounded bg-red-600/10 border border-red-500/20 px-2 py-0.5 text-[10px] font-bold text-red-400 uppercase tracking-wide">
+                      VOD
+                    </span>
                   </div>
 
-                  {/* Duration Badge */}
-                  <span className="absolute bottom-3 right-3 rounded bg-zinc-950/80 px-2 py-0.5 text-[10px] font-bold text-zinc-300 tracking-wider">
-                    {vod.duration}
-                  </span>
-                  
-                  {/* Video Type Badge */}
-                  <span className="absolute top-3 left-3 rounded bg-red-600/10 border border-red-500/20 px-2 py-0.5 text-[10px] font-bold text-red-400 uppercase tracking-wide">
-                    VOD
-                  </span>
-                </div>
-
-                {/* Info Segment */}
-                <div className="p-4">
-                  <h3 className="line-clamp-2 text-sm font-bold text-zinc-100 group-hover:text-red-500 transition-colors leading-snug">
-                    {vod.title}
-                  </h3>
-                  <div className="mt-3 flex items-center justify-between text-xs text-zinc-500 font-medium">
-                    <span>{vod.views}</span>
-                    <span>•</span>
-                    <span>{vod.date}</span>
+                  {/* Info Segment */}
+                  <div className="p-4">
+                    <h3 className="line-clamp-2 text-sm font-bold text-zinc-100 group-hover:text-red-500 transition-colors leading-snug">
+                      {vodTitle}
+                    </h3>
+                    <div className="mt-3 flex items-center justify-between text-xs text-zinc-500 font-medium">
+                      <span>{vodViews}</span>
+                      <span>•</span>
+                      <span>{vodDate}</span>
+                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
+                </a>
+              );
+            })}
           </div>
         </section>
       </main>
